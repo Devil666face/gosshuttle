@@ -29,6 +29,7 @@ upx: ## Pack upx
 
 build:  ## Build
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags="$(LDFLAGS)" -gcflags=$(GCFLAGS) -asmflags=$(ASMFLAGS) -o $(PROJECT_BIN)/$(APP) main.go
+	CGO_ENABLED=1 GOOS=windows GOARCH=$(GOARCH) go build -ldflags="$(LDFLAGS)" -gcflags=$(GCFLAGS) -asmflags=$(ASMFLAGS) -o $(PROJECT_BIN)/$(APP).exe main.go
 
 lint: .install-linter ## Run linter
 	golangci-lint run ./...

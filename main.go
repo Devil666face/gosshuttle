@@ -7,10 +7,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 
 	"github.com/codeskyblue/go-sh"
+	"github.com/jackpal/gateway"
 	_ "github.com/xjasonlyu/tun2socks/v2/dns"
 	"github.com/xjasonlyu/tun2socks/v2/engine"
 )
@@ -36,6 +38,10 @@ type Environment struct {
 	proxyport string
 	session   *sh.Session
 	key       *engine.Key
+}
+
+func IsWindows() bool {
+	return runtime.GOOS == "windows"
 }
 
 func getRandomPort() (int, error) {
@@ -71,6 +77,18 @@ func New(_address string, _user string, _port int) (*Environment, error) {
 }
 
 func (e *Environment) SetDefaultGateway() error {
+	if IsWindows() {
+		gateway, err := gateway.DiscoverGateway()
+		if err != nil {
+			return fmt.Errorf("error to get default gateway")
+		}
+		e.defgate = &DefaultGateway{
+			device:  "",
+			address: gateway.String(),
+		}
+		log.Println(e.defgate)
+		return nil
+	}
 	out, err := e.session.Command("ip", "ro", "sh").Output()
 	if err != nil {
 		return CommandError("error to get default gateway %s: %w", out, err)
@@ -91,7 +109,19 @@ func CommandError(message string, out []byte, err error) error {
 }
 
 func (e *Environment) SetRoutes() error {
-	// ip ro add 88.151.117.196 (адресс ssh сервера) via 192.168.0.1 (default gateway) dev wlp4s0
+	if IsWindows() {
+		// route add 172.252.212.8/32 20.20.20.21
+		if out, err := e.session.Command("route", "add", fmt.Sprintf("%s/32", e.address), e.defgate.address).Output(); err != nil {
+			return CommandError("error to set route to ssh server %s: %w", out, err)
+		}
+		for _, local := range LocalNets {
+			if out, err := e.session.Command("route", "add", local, e.defgate.address).Output(); err != nil {
+				return CommandError("error to set route to local networks via default gateway %s: %w", out, err)
+			}
+		}
+		return nil
+	}
+	// ip ro add 88.151.117.196 via 192.168.0.1  dev wlp4s0
 	// ip ro add 10.0.0.0/8 via 192.168.0.1 dev wlp4s0
 	// ip ro add 172.16.0.0/12 via 192.168.0.1 dev wlp4s0
 	// ip ro add 192.168.0.0/16 via 192.168.0.1 dev wlp4s0
@@ -108,6 +138,18 @@ func (e *Environment) SetRoutes() error {
 
 func (e *Environment) Shutdown() error {
 	var Err error
+	if IsWindows() {
+		// route add 172.252.212.8/32 20.20.20.21
+		if out, err := e.session.Command("route", "delete", fmt.Sprintf("%s/32", e.address)).Output(); err != nil {
+			Err = CommandError("error to delete route to ssh server %s: %w", out, err)
+		}
+		for _, local := range LocalNets {
+			if out, err := e.session.Command("route", "delete", local).Output(); err != nil {
+				Err = CommandError("error to delete route to local networks via default gateway %s: %w", out, err)
+			}
+		}
+		return Err
+	}
 	if out, err := e.session.Command("ip", "ro", "del", e.address).Output(); err != nil {
 		Err = CommandError("error to delete route to ssh server %s: %w", out, err)
 	}
@@ -181,10 +223,10 @@ func main() {
 	env.RunTunToSocks()
 	defer engine.Stop()
 
-	if err := env.SetProxyToTun(); err != nil {
-		log.Println(err)
-		return
-	}
+	// if err := env.SetProxyToTun(); err != nil {
+	// 	log.Println(err)
+	// 	return
+	// }
 
 	func(s chan os.Signal) {
 		signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
