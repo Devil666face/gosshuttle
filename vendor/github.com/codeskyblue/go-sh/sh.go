@@ -60,7 +60,7 @@ type Session struct {
 }
 
 func (s *Session) writePrompt(args ...interface{}) {
-	var ps1 = fmt.Sprintf("[gosshuttle]$")
+	var ps1 = fmt.Sprintf("[golang-sh]$")
 	args = append([]interface{}{ps1}, args...)
 	fmt.Fprintln(s.Stderr, args...)
 }
