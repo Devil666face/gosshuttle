@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Insall system dependences
-        run: sudo apt-get install -y tar wget
+        run: sudo apt-get install -y tar
 
       - name: Set up Go
         uses: actions/setup-go@v4
