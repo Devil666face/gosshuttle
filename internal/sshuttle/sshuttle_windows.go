@@ -2,6 +2,7 @@ package sshuttle
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jackpal/gateway"
 )
@@ -46,13 +47,22 @@ func (e *Environment) Shutdown() error {
 }
 
 func (e *Environment) SetProxyToTun() error {
-	// ip link set gatewaytun up
-	// ip route add default dev gatewaytun metric 50
-	// if out, err := e.session.Command("ip", "link", "set", "gatewaytun", "up").Output(); err != nil {
-	// return CommandError("error to up gatewaytun %s: %w", out, err)
-	// }
-	// if out, err := e.session.Command("ip", "route", "add", "default", "dev", "gatewaytun", "metric", "50").Output(); err != nil {
-	// 	return CommandError("error to set default gateway to gatewaytun with metric 50 %s: %w", out, err)
-	// }
+	// netsh interface ipv4 show interface
+	// netsh interface ipv4 show interfaces interface=Ethernet level=normal
+	// route add 0.0.0.0 mask 0.0.0.0 192.168.1.1 metric 10 if <Interface1_index>
+	out, err := e.session.Command("netsh", "interface", "ipv4", "show", "interfaces", "interface=gatewaytun", "level=normal").Output()
+	if err != nil {
+		return CommandError("error to get gatewaytun interface id %s: %w", out, err)
+	}
+
+	cut := strings.Fields(strings.TrimSpace(string(out)))
+	if len(cut) < 11 {
+		return CommandError("error to get gatewaytun interface id %s: %w", out, err)
+	}
+	idx := cut[10]
+
+	if out, err := e.session.Command("route", "add", "0.0.0.0", "mask", "0.0.0.0", e.defgate.address, "metric", "5", "if", idx).Output(); err != nil {
+		return CommandError("error to set default gateway to gatewaytun with metric 5 %s: %w", out, err)
+	}
 	return nil
 }

@@ -64,7 +64,6 @@ github.com/xjasonlyu/tun2socks/v2/core/device/iobased
 github.com/xjasonlyu/tun2socks/v2/core/device/tun
 github.com/xjasonlyu/tun2socks/v2/core/option
 github.com/xjasonlyu/tun2socks/v2/dialer
-github.com/xjasonlyu/tun2socks/v2/dns
 github.com/xjasonlyu/tun2socks/v2/engine
 github.com/xjasonlyu/tun2socks/v2/engine/mirror
 github.com/xjasonlyu/tun2socks/v2/internal/version
