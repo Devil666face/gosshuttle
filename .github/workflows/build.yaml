@@ -46,7 +46,7 @@ jobs:
           GOOS: windows
           GOARCH: amd64
           CGO_ENABLED: 0
-          LDFLAGS: -w -s
+          LDFLAGS: "-w -s"
           GCFLAGS: "-trimpath"
           ASMFLAGS: "-trimpath"
           APP: ${{github.event.repository.name}}
