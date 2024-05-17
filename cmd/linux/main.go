@@ -1,32 +1,27 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"gosshuttle/internal/config"
 	"gosshuttle/internal/sshuttle"
 
 	"github.com/xjasonlyu/tun2socks/v2/engine"
 )
 
 func main() {
-	address := flag.String("address", "", "Ssh remote server address")
-	user := flag.String("user", "", "Ssh remote user")
-	port := flag.Int("port", 22, "Ssh remote port")
-	flag.Parse()
-	if *address == "" {
-		log.Fatalln("you must set remote ssh server address")
-	}
-	if *user == "" {
-		log.Fatalln("you must set remote ssh user")
+	_config, err := config.New()
+	if err != nil {
+		log.Fatal(err)
 	}
 	env, err := sshuttle.New(
-		*address,
-		*user,
-		*port,
+		*_config.Address,
+		*_config.User,
+		*_config.Port,
+		*_config.Metric,
 	)
 	if err != nil {
 		log.Fatal(err)

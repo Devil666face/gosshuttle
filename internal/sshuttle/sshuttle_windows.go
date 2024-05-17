@@ -61,8 +61,8 @@ func (e *Environment) SetProxyToTun() error {
 	}
 	idx := cut[10]
 
-	if out, err := e.session.Command("route", "add", "0.0.0.0", "mask", "0.0.0.0", e.defgate.address, "metric", "5", "if", idx).Output(); err != nil {
-		return CommandError("error to set default gateway to gatewaytun with metric 5 %s: %w", out, err)
+	if out, err := e.session.Command("route", "add", "0.0.0.0", "mask", "0.0.0.0", e.defgate.address, "metric", e.metric, "if", idx).Output(); err != nil {
+		return CommandError("error to set default gateway to gatewaytun %s: %w", out, err)
 	}
 	return nil
 }

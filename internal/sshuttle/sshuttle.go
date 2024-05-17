@@ -27,6 +27,7 @@ type Environment struct {
 	user      string
 	port      string
 	proxyport string
+	metric    string
 	session   *sh.Session
 	key       *engine.Key
 }
@@ -40,7 +41,7 @@ func getRandomPort() (int, error) {
 	return listener.Addr().(*net.TCPAddr).Port, nil
 }
 
-func New(_address string, _user string, _port int) (*Environment, error) {
+func New(_address string, _user string, _port int, _metric int) (*Environment, error) {
 	_proxyport, err := getRandomPort()
 	if err != nil {
 		return nil, fmt.Errorf("error to get random port for socks5 proxy: %w", err)
@@ -51,6 +52,7 @@ func New(_address string, _user string, _port int) (*Environment, error) {
 		port:      fmt.Sprint(_port),
 		proxyport: fmt.Sprint(_proxyport),
 		session:   sh.NewSession(),
+		metric:    fmt.Sprint(_metric),
 		key: &engine.Key{
 			Device:   "tun://gatewaytun",
 			LogLevel: "silent",

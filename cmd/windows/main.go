@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -9,6 +8,7 @@ import (
 
 	_ "embed"
 
+	"gosshuttle/internal/config"
 	"gosshuttle/internal/sshuttle"
 
 	"github.com/xjasonlyu/tun2socks/v2/engine"
@@ -17,31 +17,28 @@ import (
 //go:embed wintun.dll
 var WintunDLL []byte
 
+const Wintun = "wintun.dll"
+
 func main() {
-	address := flag.String("address", "", "Ssh remote server address")
-	user := flag.String("user", "", "Ssh remote user")
-	port := flag.Int("port", 22, "Ssh remote port")
-	flag.Parse()
-	if *address == "" {
-		log.Fatalln("you must set remote ssh server address")
-	}
-	if *user == "" {
-		log.Fatalln("you must set remote ssh user")
+	_config, err := config.New()
+	if err != nil {
+		log.Fatal(err)
 	}
 	env, err := sshuttle.New(
-		*address,
-		*user,
-		*port,
+		*_config.Address,
+		*_config.User,
+		*_config.Port,
+		*_config.Metric,
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err := os.Remove("wintun.dll"); err != nil {
+		if err := os.Remove(Wintun); err != nil {
 			log.Println(err)
 		}
 	}()
-	if err := os.WriteFile("wintun.dll", WintunDLL, 0777); err != nil {
+	if err := os.WriteFile(Wintun, WintunDLL, 0777); err != nil {
 		log.Printf("error to write wintun.dll: %v\n", err)
 		return
 	}
